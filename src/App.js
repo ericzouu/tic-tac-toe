@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 const TURN_SECONDS = 10;
 
@@ -10,16 +10,16 @@ function Square({ value, onSquareClick }) {
   );
 }
 
-function Board({ xIsNext, squares, onPlay, locked, winnerByTime }) {
+function Board({ xIsNext, squares, onPlay, winnerByTime }) {
   function handleClick(i) {
-    if (locked || calculateWinner(squares) || squares[i]) {
+    if (winnerByTime || calculateWinner(squares) || squares[i]) {
       return;
     }
     const nextSquares = squares.slice();
     if (xIsNext) {
-      nextSquares[i] = "X";
+      nextSquares[i] = 'X';
     } else {
-      nextSquares[i] = "O";
+      nextSquares[i] = 'O';
     }
     onPlay(nextSquares);
   }
@@ -27,13 +27,13 @@ function Board({ xIsNext, squares, onPlay, locked, winnerByTime }) {
   const winner = calculateWinner(squares);
   let status;
   if (winnerByTime) {
-    status = "Winner: " + winnerByTime + " (on time)";
+    status = 'Winner: ' + winnerByTime + ' (on time)';
   } else if (winner) {
-    status = "Winner: " + winner;
+    status = 'Winner: ' + winner;
   } else if (squares.every(Boolean)) {
-    status = "Draw";
+    status = 'Draw';
   } else {
-    status = "Next player: " + (xIsNext ? "X" : "O");
+    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
   }
 
   return (
@@ -61,64 +61,45 @@ function Board({ xIsNext, squares, onPlay, locked, winnerByTime }) {
 export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
-  const [scores, setScores] = useState({ X: 0, O: 0, draw: 0 });
-  const [roundOver, setRoundOver] = useState(false);
-  const [winnerByTime, setWinnerByTime] = useState(null);
   const [timeLeft, setTimeLeft] = useState(TURN_SECONDS);
-  const [paused, setPaused] = useState(false);
+  const [winnerByTime, setWinnerByTime] = useState(null);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
+  const gameOver =
+    !!winnerByTime ||
+    !!calculateWinner(currentSquares) ||
+    currentSquares.every(Boolean);
 
-  // Countdown: ticks once per second unless paused or the round is over
+  // Count down once per second until the game ends
   useEffect(() => {
-    if (paused || roundOver) return;
+    if (gameOver) return;
     if (timeLeft === 0) {
-      const winner = xIsNext ? "O" : "X";
-      setWinnerByTime(winner);
-      setRoundOver(true);
-      setScores((s) => ({ ...s, [winner]: s[winner] + 1 }));
+      setWinnerByTime(xIsNext ? 'O' : 'X');
       return;
     }
-    const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+    const id = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
     return () => clearTimeout(id);
-  }, [timeLeft, paused, roundOver, xIsNext]);
+  }, [timeLeft, gameOver, xIsNext]);
 
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
     setTimeLeft(TURN_SECONDS);
-
-    const winner = calculateWinner(nextSquares);
-    if (winner) {
-      setRoundOver(true);
-      setScores((s) => ({ ...s, [winner]: s[winner] + 1 }));
-    } else if (nextSquares.every(Boolean)) {
-      setRoundOver(true);
-      setScores((s) => ({ ...s, draw: s.draw + 1 }));
-    }
   }
 
   function jumpTo(nextMove) {
     setCurrentMove(nextMove);
-    if (!roundOver) setTimeLeft(TURN_SECONDS);
-  }
-
-  function newRound() {
-    setHistory([Array(9).fill(null)]);
-    setCurrentMove(0);
-    setRoundOver(false);
     setWinnerByTime(null);
     setTimeLeft(TURN_SECONDS);
-    setPaused(false);
   }
 
   const moves = history.map((squares, move) => {
     let description;
     if (move > 0) {
-      description = "Go to move #" + move;
+      description = 'Go to move #' + move;
     } else {
-      description = "Go to game start";
+      description = 'Go to game start';
     }
     return (
       <li key={move}>
@@ -134,23 +115,11 @@ export default function Game() {
           xIsNext={xIsNext}
           squares={currentSquares}
           onPlay={handlePlay}
-          locked={roundOver || paused}
           winnerByTime={winnerByTime}
         />
       </div>
       <div className="game-info">
-        <div className="scores">
-          X: {scores.X} &nbsp; O: {scores.O} &nbsp; Draws: {scores.draw}
-        </div>
-        <div className="timer">
-          {roundOver ? "Round over" : paused ? "Paused" : timeLeft + "s left"}
-        </div>
-        <div className="controls">
-          <button onClick={() => setPaused(!paused)} disabled={roundOver}>
-            {paused ? "Resume" : "Pause"}
-          </button>
-          <button onClick={newRound}>New round</button>
-        </div>
+        <div className="timer">{gameOver ? 'Game over' : timeLeft + 's left'}</div>
         <ol>{moves}</ol>
       </div>
     </div>

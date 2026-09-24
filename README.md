@@ -14,8 +14,8 @@ A two-player tic-tac-toe game built with React
 Requires [Node.js](https://nodejs.org/) 18 or later.
 
 ```bash
-git clone <your-repo-url>
-cd <your-repo-folder>
+git clone https://github.com/ericzouu/tic-tac-toe.git
+cd tic-tac-toe
 npm install
 npm start
 ```
